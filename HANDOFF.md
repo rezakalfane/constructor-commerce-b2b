@@ -10,7 +10,9 @@ type-ahead and behavioral tracking. Every Bloomreach file, variable and call is 
 
 | Thing | Where |
 |---|---|
-| Code | `Workspaces/ConstructorIO/constructor-commerce-b2b` (git initialised, **nothing committed**) |
+| Live site | https://constructor-commerce-b2b.vercel.app (and `/fr`) |
+| GitHub | `rezakalfane/constructor-commerce-b2b` (private); `main` deploys to production on Vercel (`rza-kalfanes-projects`) |
+| Code | `Workspaces/ConstructorIO/constructor-commerce-b2b` |
 | Index loader and config scripts | `scripts/constructor/` (copied from `Workspaces/ConstructorIO/scripts/`) |
 | Index data | `Workspaces/ConstructorIO/data/catalog/` (150 items, 19 groups, built from BigCommerce) |
 | Knowledge base for agents | the `constructor-search` skill (`~/.claude/skills/constructor-search`) |
@@ -23,7 +25,7 @@ brands, categories), and in a real browser (Playwright with `navigator.webdriver
 `item_detail_load`, `conversion` (add to cart), `autocomplete select`, `search`, result click-through all reach `ac.cnstrc.com`. `tsc` and `eslint` are clean.
 
 **Not done or not checked**
-- `npm run build` was run once at the end; no production deployment, no GitHub repo, no Vercel project.
+- Production variables: `BIGCOMMERCE_*`, `AMPLIENCE_HUB_NAME`, `CONSTRUCTOR_INDEX_KEY`, `CIO_DEBUG=1` (the debug panel is public). `AMPLIENCE_DELIVERY_HOST` is unset on purpose (published content).
 - The `purchase` event (demo checkout confirmation) and browse result click were not exercised in a browser.
 - Events were confirmed to be **sent**; whether Constructor's dashboard (Tracking monitor / Integration check) accepts them was not looked at.
 - French pages render, but French search text does not match (the index has English fields only).
@@ -45,7 +47,7 @@ Index scripts (need `CONSTRUCTOR_API_TOKEN` in `.env.local`): `node scripts/cons
 
 ## Next steps
 
-1. **Create the GitHub repo and Vercel project** `constructor-commerce-b2b` (use the `my-vercel` skill; the user runs production deploys). Set `BIGCOMMERCE_*`, `AMPLIENCE_HUB_NAME`, `CONSTRUCTOR_INDEX_KEY`, `CIO_DEBUG=1`.
+1. **Deployed 10 Nov** (checked live: pages, EN/FR, search, category, filters, redirect, `/api/suggest`, events from the live site, no secrets in the HTML). Remember: production deploys by hand are run by the user (`vercel deploy --prod`); a push to `main` deploys on its own.
 2. Check the events in the Constructor dashboard, then try an **A/B test** or a **personalization** rule with a segment (Segments tab, `us`).
 3. **Content search**: add a `Content` section to the index from `lib/content-search.ts` documents (or keep local).
 4. Add `newest` / `best selling` sorts only if the catalog gains those fields.

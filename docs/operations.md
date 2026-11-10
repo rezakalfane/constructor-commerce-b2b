@@ -40,7 +40,7 @@ base URL to work on the storefront with the content form open ([visualizations.m
 
 ## Deployments
 
-This copy is meant to have its own Vercel project, **`constructor-commerce-b2b`**, and GitHub repository (not created yet: see [HANDOFF.md](../HANDOFF.md)).
+This copy has its own Vercel project, **`constructor-commerce-b2b`** (team `rza-kalfanes-projects`), and GitHub repository `rezakalfane/constructor-commerce-b2b`. Pushing to `main` deploys production at https://constructor-commerce-b2b.vercel.app.
 Production reads the published Amplience content and the Constructor index; it needs `BIGCOMMERCE_*`, `AMPLIENCE_HUB_NAME`, `CONSTRUCTOR_INDEX_KEY` and, to see the debug panel, `CIO_DEBUG=1`.
 There is no Preview setup (no staging branch, no time travel) in this copy, so the Amplience workflows (`sync-staging`, `warm-timeline`) were removed.
 

@@ -1,6 +1,6 @@
 # Commerce B2B storefront (Amplience content, Constructor search)
 
-**Not deployed yet** (run it locally; see [HANDOFF.md](HANDOFF.md) for the Vercel and GitHub steps).
+**Live:** https://constructor-commerce-b2b.vercel.app (English) and https://constructor-commerce-b2b.vercel.app/fr (French). GitHub: `rezakalfane/constructor-commerce-b2b` (private); a push to `main` deploys production.
 
 This is the Amplience storefront with its **product list, search, facets and type-ahead served by Constructor**, behavioral tracking sent to
 Constructor, and a debug panel for the Constructor calls (see [docs/constructor.md](docs/constructor.md)). It was ported from the Bloomreach version:
