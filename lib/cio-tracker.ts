@@ -160,10 +160,31 @@ export function pageView(cfg: TrackerConfig, data: PageData) {
   }
 }
 
+// The search that led to a product: remembered when the visitor clicks a search result (or picks a product in the type-ahead), so the
+// add-to-cart on the product page can carry the search term and Constructor can attribute the conversion to that search.
+const TERM_KEY = "cio_search_term";
+function rememberTerm(itemId: string, term: string) {
+  try {
+    sessionStorage.setItem(TERM_KEY, JSON.stringify({ itemId, term }));
+  } catch {
+    // storage unavailable: the conversion is sent without a term
+  }
+}
+function recallTerm(itemId: string): string {
+  try {
+    const v = JSON.parse(sessionStorage.getItem(TERM_KEY) ?? "null") as { itemId?: string; term?: string } | null;
+    if (v?.itemId === itemId && v.term) return v.term;
+  } catch {
+    // ignore
+  }
+  return "TERM_UNKNOWN";
+}
+
 /** A click on a product card of the current listing. */
 export function itemClick(cfg: TrackerConfig, itemId: string, itemName: string) {
   const c = context;
   if (c.kind === "search") {
+    rememberTerm(itemId, c.term);
     send(cfg, "search-result-click", `product ${itemId} from "${c.term}"`, { itemId, term: c.term, resultId: c.resultId }, (t) =>
       t.trackSearchResultClick(c.term, { itemId, itemName, resultId: c.resultId, section: SECTION }),
     );
@@ -181,6 +202,7 @@ export function inputFocus(cfg: TrackerConfig) {
 
 /** A suggestion (or product) was chosen in the type-ahead; `section` is the Autocomplete section it came from. */
 export function autocompleteSelect(cfg: TrackerConfig, term: string, originalQuery: string, section: string, itemId?: string) {
+  if (itemId) rememberTerm(itemId, originalQuery);
   send(cfg, "autocomplete-select", `"${originalQuery}" → ${term} (${section})`, { term, originalQuery, section, itemId }, (t) =>
     t.trackAutocompleteSelect(term, { originalQuery, section, itemId }),
   );
@@ -194,7 +216,7 @@ export function searchSubmit(cfg: TrackerConfig, term: string, originalQuery: st
 /** A product was added to the cart: a conversion of type add_to_cart. */
 export function addToCart(cfg: TrackerConfig, itemId: string, itemName: string, revenue: number, quantity: number) {
   send(cfg, "add-to-cart", `product ${itemId} × ${quantity}`, { itemId, revenue, quantity }, (t) =>
-    t.trackConversion(context.kind === "search" ? context.term : "TERM_UNKNOWN", { itemId, itemName, revenue, type: "add_to_cart", section: SECTION }),
+    t.trackConversion(recallTerm(itemId), { itemId, itemName, revenue, type: "add_to_cart", section: SECTION }),
   );
 }
 
