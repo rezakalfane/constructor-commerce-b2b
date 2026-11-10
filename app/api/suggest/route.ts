@@ -3,7 +3,7 @@ import { cioSearch, cioSuggest, completeFrom, constructorConfigured, debugEnable
 import type { CioCall } from "@/lib/cio-types";
 import { FACET_NAMES, formatPrice, getBcProducts, getCategoryTree, productHref, type CategoryNode } from "@/lib/bigcommerce";
 import { contentIndexStats, searchContent, type ContentHit } from "@/lib/content-search";
-import { SEGMENT_COOKIE, parseSegments } from "@/lib/segments";
+import { AB_COOKIE, SEGMENT_COOKIE, abTestOn, parseAbGroup, parseSegments, withExperiment } from "@/lib/segments";
 import { CLIENT_COOKIE, SESSION_COOKIE, sessionIdOf, type Visitor } from "@/lib/visitor";
 import { DEFAULT_LOCALE, isLocale, localePath, localizeRedirect, translateSpec } from "@/lib/i18n";
 
@@ -55,10 +55,11 @@ export async function GET(request: NextRequest) {
 
   try {
     // The visitor of the search box: the cookies travel with this request.
+    const clientId = request.cookies.get(CLIENT_COOKIE)?.value ?? "";
     const visitor: Visitor = {
-      clientId: request.cookies.get(CLIENT_COOKIE)?.value ?? "",
+      clientId,
       sessionId: sessionIdOf(request.cookies.get(SESSION_COOKIE)?.value),
-      segments: parseSegments(request.cookies.get(SEGMENT_COOKIE)?.value),
+      segments: withExperiment(parseSegments(request.cookies.get(SEGMENT_COOKIE)?.value), clientId, abTestOn(), parseAbGroup(request.cookies.get(AB_COOKIE)?.value)),
       url: request.headers.get("referer") ?? "",
     };
     // Autocomplete matches prefixes, so its products also tell us how to complete a partial word ("exi" -> "exide").

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { clearEvents, clearTypeaheadCalls, usePageCalls, useEvents, useTypeaheadCalls } from "@/lib/cio-debug-store";
+import { CioAbTab } from "./cio-ab-tab";
 import { CioSegmentsTab, useSegments } from "./cio-segments-tab";
 import type { CioCall } from "@/lib/cio-types";
 
@@ -81,10 +82,10 @@ function CallRow({ call }: { call: CioCall }) {
  * as you type (via /api/suggest), plus the tracking events this browser sent: the request, its parameters, timing and the raw response.
  * Rendered only when the server records calls (development, or CIO_DEBUG=1).
  */
-export function CioDebugPanel() {
+export function CioDebugPanel({ abTest = false }: { abTest?: boolean }) {
   const calls = usePageCalls();
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<"page" | "typeahead" | "events" | "segments">("page");
+  const [tab, setTab] = useState<"page" | "typeahead" | "events" | "segments" | "ab">("page");
   const segments = useSegments();
   const typeahead = useTypeaheadCalls();
   const events = useEvents();
@@ -113,14 +114,14 @@ export function CioDebugPanel() {
         <section aria-label="Constructor debug" className="fixed inset-x-0 bottom-0 z-[59] flex h-[60vh] flex-col bg-[#0f1b26] text-[13px] text-white shadow-[0_-8px_30px_rgba(0,0,0,0.35)]">
           <header className="flex flex-wrap items-center gap-3 border-b border-white/15 px-4 py-2">
             <h2 className="mr-2 text-sm font-bold">Constructor</h2>
-            {(["page", "typeahead", "events", "segments"] as const).map((t) => (
+            {(["page", "typeahead", "events", "segments", "ab"] as const).map((t) => (
               <button
                 key={t}
                 type="button"
                 onClick={() => setTab(t)}
                 className={`rounded px-2.5 py-1 ${tab === t ? "bg-white text-[#0f1b26] font-semibold" : "hover:bg-white/10"}`}
               >
-                {t === "page" ? `This page (${calls.length})` : t === "typeahead" ? `Search box (${typeaheadCount})` : t === "events" ? `Events (${events.length})` : `Segments${segments.length ? ` (${segments.length})` : ""}`}
+                {t === "page" ? `This page (${calls.length})` : t === "typeahead" ? `Search box (${typeaheadCount})` : t === "events" ? `Events (${events.length})` : t === "ab" ? `A/B${abTest ? " · on" : ""}` : `Segments${segments.length ? ` (${segments.length})` : ""}`}
               </button>
             ))}
             <span className="ml-auto hidden text-white/50 md:inline">Esc or a click above closes this panel.</span>
@@ -134,7 +135,9 @@ export function CioDebugPanel() {
             </button>
           </header>
           <div className="flex-1 overflow-y-auto">
-            {tab === "segments" ? (
+            {tab === "ab" ? (
+              <CioAbTab enabled={abTest} />
+            ) : tab === "segments" ? (
               <CioSegmentsTab />
             ) : tab === "page" ? (
               calls.length ? (

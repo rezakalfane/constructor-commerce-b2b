@@ -36,3 +36,31 @@ export function segmentsFromParams(values: string[]): string[] | null {
   const ids = values.flatMap((v) => v.split(",")).map((v) => v.replace(/^audience:/, "").trim());
   return ids.includes("none") ? [] : parseSegments(ids.join(","));
 }
+
+// ---- A/B test run by the storefront (Constructor has no experiment UI or API here) -------------------------------------------------------
+// With `CIO_AB_TEST=battery`, half of the visitors (chosen from their client id, so it never changes) also get the segment `ab-battery-b`.
+// A campaign targeted at that segment (scripts/constructor/configure-segment-campaigns.mjs) ranks differently for group B only; group A is the control.
+// The segment is sent to Search, Browse and Autocomplete AND to the tracking events, so Constructor's reports can be sliced by it.
+export const AB_SEGMENT = "ab-battery-b";
+
+/** Stable 50/50 split from the visitor's client id (FNV-1a). */
+export function abBucket(clientId: string): "a" | "b" {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < clientId.length; i++) h = Math.imul(h ^ clientId.charCodeAt(i), 0x01000193);
+  return (h >>> 0) % 2 === 0 ? "a" : "b";
+}
+
+/** Cookie that forces this browser into group "a" or "b" (debug panel), instead of the group its client id gives. */
+export const AB_COOKIE = "cio_ab";
+export type AbGroup = "a" | "b";
+export const parseAbGroup = (value: string | undefined | null): AbGroup | undefined => (value === "a" || value === "b" ? value : undefined);
+
+/** The group a visitor is in: the forced one, else the one their client id gives; none when there is no id yet. */
+export const abGroup = (clientId: string, forced?: AbGroup): AbGroup | undefined => forced ?? (clientId ? abBucket(clientId) : undefined);
+
+/** The visitor's segments plus the experiment segment, when the experiment is on and the visitor is in group B. */
+export function withExperiment(segments: string[], clientId: string, on: boolean, forced?: AbGroup): string[] {
+  return on && abGroup(clientId, forced) === "b" && !segments.includes(AB_SEGMENT) ? [...segments, AB_SEGMENT] : segments;
+}
+
+export const abTestOn = () => process.env.CIO_AB_TEST === "battery";

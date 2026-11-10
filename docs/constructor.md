@@ -56,3 +56,13 @@ Tabs: **This page** (server calls behind the page), **Search box** (calls behind
 
 Media rule banners and grid tiles, the "Showing results for" notice (Constructor corrects typos silently), audiences from the URL (replaced by `us`
 segments), content catalog sync and the Data Hub content types (content search stays local), the Bloomreach pixel debug flag.
+
+## A/B test (`CIO_AB_TEST=battery`)
+
+Constructor has no experiment UI or API on this instance, so the storefront runs the split itself.
+
+- **Split**: a visitor's client id is hashed (FNV-1a) into group A or B, 50/50 and stable. Group B also gets the segment `ab-battery-b` (`lib/segments.ts`: `abBucket`, `withExperiment`). `cio_ab=a|b` forces a group in one browser.
+- **Variant**: a campaign targeted at that segment (`scripts/constructor/configure-segment-campaigns.mjs`, `request_tag_name: user_segment`) puts start-stop batteries first on "battery". Group A is the control.
+- **Where the segment goes**: `us` on Search, Browse, Autocomplete and the type-ahead (`lib/visitor.ts`, `app/api/suggest/route.ts`), and the `segments` option of the browser tracker, so events carry it (`lib/cio-tracker.ts`). The tracker reads it when it starts: changing group reloads the page.
+- **Debug panel, A/B tab** (`components/cio-ab-tab.tsx`): on/off, what changes, this browser's group with a force switch, both groups' results side by side (`/api/ab-compare`, debug only), a split check. No counts are kept: read results in the dashboard (if it can slice by segment) or from the events.
+- Verified in a browser: forcing B changes the segment and 8 of 10 positions for "battery". Not verified: that an event carries the segment, and the dashboard report.

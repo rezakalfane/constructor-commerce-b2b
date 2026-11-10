@@ -12,7 +12,9 @@ const TrackingContext = createContext<Ctx>({ enabled: false, apiKey: "", debug: 
  * Switches Constructor tracking on for the whole site (see `trackingEnabled` in the layout) and reports clicks on product cards
  * (`data-cio-item`) of the listing on screen.
  */
-export function CioTrackingProvider({ enabled, apiKey, debug, children }: Ctx & { children: ReactNode }) {
+export function CioTrackingProvider({ enabled, apiKey, debug, abTest = false, children }: Ctx & { abTest?: boolean; children: ReactNode }) {
+  // Before any child effect can create the client: its events carry the visitor's segments, including the A/B group.
+  tracker.configureExperiment(abTest);
   const cfg = useMemo(() => ({ apiKey, debug }), [apiKey, debug]);
   useEffect(() => {
     if (!enabled) return;

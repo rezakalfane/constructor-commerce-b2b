@@ -4,6 +4,7 @@ import { AnnouncementBar, SiteFooter, SiteHeader } from "@/components/site-chrom
 import { CioDebugPanel } from "@/components/cio-debug-panel";
 import { CioTrackingProvider } from "@/components/cio-tracking";
 import { debugEnabled } from "@/lib/constructor";
+import { abTestOn } from "@/lib/segments";
 import { TimePreviewBar } from "@/components/time-preview-bar";
 import { getTimePreview } from "@/lib/amplience";
 import { body, display } from "@/lib/fonts";
@@ -38,7 +39,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[lo
       className={`${display.variable} ${body.variable} h-full`}
     >
       <body className="min-h-full flex flex-col">
-        <CioTrackingProvider enabled={trackingEnabled} apiKey={apiKey} debug={debugEnabled()}>
+        <CioTrackingProvider enabled={trackingEnabled} apiKey={apiKey} debug={debugEnabled()} abTest={abTestOn()}>
         {time && (
           <TimePreviewBar
             ts={time.ts}
@@ -61,7 +62,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[lo
         <SiteHeader locale={locale} />
         <main className="flex-1">{children}</main>
         <SiteFooter locale={locale} />
-        {debugEnabled() && <CioDebugPanel />}
+        {debugEnabled() && <CioDebugPanel abTest={abTestOn()} />}
         </CioTrackingProvider>
       </body>
     </html>

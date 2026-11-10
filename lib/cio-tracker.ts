@@ -4,6 +4,8 @@
 // ask for cookie storage, `ConstructorioID_session_id` (so the server can send the browser's session id on its own calls).
 import ConstructorIO from "@constructor-io/constructorio-client-javascript";
 import { pushEvent } from "./cio-debug-store";
+import { AB_COOKIE, SEGMENT_COOKIE, parseAbGroup, parseSegments, withExperiment } from "./segments";
+import { CLIENT_COOKIE } from "./visitor-edge";
 
 export const SECTION = "Products";
 
@@ -11,6 +13,12 @@ export type TrackerConfig = { apiKey: string; debug: boolean };
 type Client = InstanceType<typeof ConstructorIO>;
 
 let client: Client | undefined;
+let abOn = false;
+
+/** Turns the storefront A/B test on for tracking events (the client is created on the first event, so call this before). */
+export function configureExperiment(on: boolean) { abOn = on; }
+
+const cookie = (name: string) => document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`))?.[1] ?? "";
 let clientKey = "";
 
 function getClient(cfg: TrackerConfig): Client | undefined {
@@ -20,6 +28,7 @@ function getClient(cfg: TrackerConfig): Client | undefined {
     client = new ConstructorIO({
       apiKey: cfg.apiKey,
       sendTrackingEvents: true,
+      segments: withExperiment(parseSegments(cookie(SEGMENT_COOKIE)), cookie(CLIENT_COOKIE), abOn, parseAbGroup(cookie(AB_COOKIE))),
       idOptions: { session_id_storage_location: "cookie", cookie_samesite: "Lax" },
     });
     clientKey = cfg.apiKey;
