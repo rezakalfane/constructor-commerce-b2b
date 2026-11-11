@@ -59,7 +59,10 @@ segments), content catalog sync and the Data Hub content types (content search s
 
 ## A/B test (`CIO_AB_TEST=battery`)
 
-Constructor has no experiment UI or API on this instance, so the storefront runs the split itself.
+Two tests exist, and they are separate:
+
+- **Constructor's own** (dashboard: Analytics → A/B Testing, Global Search/Browse A/B test): measures **global rules** (Searchandizing → Global Rules; no API for those). Constructor buckets by client id (`i`). Seen from outside in `request.features.disable_test_only_global_rules_search` of a Search response (`true` = group B, rule off). The debug panel's A/B tab shows it (`/api/ab-native`). Started 2026-11-11: "Start Stop" (boost start-stop 7%, add-to-carts, 50/50). First samples showed about 8% in B, not 50%: recheck.
+- **The storefront's own** (below): for query-level, segment-targeted tests, which the native one cannot do (no experiment API). Leave `CIO_AB_TEST` unset while a native test runs, so the two do not overlap.
 
 - **Split**: a visitor's client id is hashed (FNV-1a) into group A or B, 50/50 and stable. Group B also gets the segment `ab-battery-b` (`lib/segments.ts`: `abBucket`, `withExperiment`). `cio_ab=a|b` forces a group in one browser.
 - **Variant**: a campaign targeted at that segment (`scripts/constructor/configure-segment-campaigns.mjs`, `request_tag_name: user_segment`) puts start-stop batteries first on "battery". Group A is the control.

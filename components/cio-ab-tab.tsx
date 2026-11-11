@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AB_COOKIE, AB_SEGMENT, abBucket, abGroup, parseAbGroup, parseSegments, SEGMENT_COOKIE, withExperiment, type AbGroup } from "@/lib/segments";
 import { CLIENT_COOKIE } from "@/lib/visitor-edge";
 
@@ -33,6 +33,19 @@ export function CioAbTab({ enabled }: { enabled: boolean }) {
   const [q, setQ] = useState("battery");
   const [cmp, setCmp] = useState<Compare | null>(null);
   const [busy, setBusy] = useState(false);
+  // Constructor's own A/B test: the group it gave this visitor (null = unknown or no test).
+  const [native, setNative] = useState<{ group: AbGroup | null; error?: string } | "loading">("loading");
+
+  useEffect(() => {
+    let live = true;
+    fetch("/api/ab-native")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((j: { group: AbGroup | null }) => live && setNative({ group: j.group }))
+      .catch((e: unknown) => live && setNative({ group: null, error: String(e) }));
+    return () => {
+      live = false;
+    };
+  }, []);
 
 
   const run = async () => {
@@ -56,7 +69,7 @@ export function CioAbTab({ enabled }: { enabled: boolean }) {
   return (
     <div className="space-y-4 p-4">
       <div className={`max-w-3xl rounded border p-3 ${enabled ? "border-green-400/60 bg-green-400/10" : "border-amber/60 bg-amber/10"}`}>
-        <p className="font-semibold">{enabled ? "A/B test is ON" : "A/B test is OFF"}</p>
+        <p className="font-semibold">{enabled ? "Storefront A/B test is ON" : "Storefront A/B test is OFF"}</p>
         <p className="text-white/70">
           {enabled ? (
             <>Visitors are split 50/50 by client id. Group B also gets <code className={code}>us={AB_SEGMENT}</code>.</>
@@ -69,7 +82,34 @@ export function CioAbTab({ enabled }: { enabled: boolean }) {
       </div>
 
       <section className="max-w-3xl space-y-2 rounded border border-white/20 p-3">
-        <h3 className="font-semibold">What the test changes</h3>
+        <h3 className="font-semibold">Constructor&apos;s own A/B test (Analytics → A/B Testing)</h3>
+        <p className="text-white/70">
+          A global-rule test run by Constructor. It buckets visitors itself from the client id, so it cannot be forced here, and it is separate from the storefront test below.
+        </p>
+        <p>
+          {native === "loading" ? (
+            <span className="text-white/60">Asking Constructor…</span>
+          ) : native.error ? (
+            <span className="text-red-300">Could not check: {native.error}</span>
+          ) : native.group === "b" ? (
+            <>
+              <b className="text-amber">Group B</b>: the tested global rule is switched <b>off</b> for this browser.
+            </>
+          ) : native.group === "a" ? (
+            <>
+              <b className="text-amber">Group A</b> (or no test running): global rules apply as usual.
+            </>
+          ) : (
+            <span className="text-white/60">No answer: this browser has no client id yet (reload once).</span>
+          )}
+        </p>
+        <p className="text-white/50">
+          Read from <code className={code}>request.features.disable_test_only_global_rules_search</code> in a Search response for this client id. <code className={code}>true</code> means group B.
+        </p>
+      </section>
+
+      <section className="max-w-3xl space-y-2 rounded border border-white/20 p-3">
+        <h3 className="font-semibold">Storefront test: what it changes</h3>
         <ul className="list-disc space-y-1 pl-5 text-white/80">
           <li><b>Group A (control):</b> the normal ranking.</li>
           <li><b>Group B:</b> {VARIANT.rule} on {VARIANT.queries}, through a Constructor campaign targeted at the segment <code className={code}>{AB_SEGMENT}</code>.</li>
